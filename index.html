@@ -1,0 +1,896 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  LayoutDashboard, 
+  User, 
+  Users, 
+  Activity, 
+  TrendingUp, 
+  Clock, 
+  Lock, 
+  Copy, 
+  CheckCircle2, 
+  ChevronRight, 
+  Menu, 
+  X,
+  ArrowUpRight,
+  ArrowDownRight,
+  ShieldCheck,
+  Wallet,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  History,
+  AlertCircle,
+  Loader2,
+  Check,
+  Building2,
+  BarChart3
+} from 'lucide-react';
+
+// --- MOCK DATA & CONFIG ---
+const INITIAL_INVESTMENT = 5500;
+const START_DATE = new Date(Date.now() - (15 * 24 * 60 * 60 * 1000)); // Started 15 days ago
+
+const getLockInDays = (amount) => {
+  if (amount >= 5000) return 150; // 5 months
+  if (amount >= 1000) return 240; // 8 months
+  return 365; // 12 months
+};
+
+const generate33DayCurve = () => {
+  const weights = Array.from({ length: 33 }, () => Math.random() * 0.8 + 0.2);
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  // Guarantee non-negative daily yields that compound exactly to 3% (1.03)
+  return weights.map(w => Math.pow(1.03, w / totalWeight) - 1); 
+};
+
+const INITIAL_YIELD_CURVE = generate33DayCurve();
+
+const MOCK_USER = {
+  name: "Alexander Reed",
+  email: "alexander.r@example.com",
+  kycStatus: "Verified",
+  joinDate: START_DATE,
+  referralCode: "NOVA-XR782Q",
+  accountType: "Institutional Standard"
+};
+
+const TRADING_PAIRS = ['Global Equities', 'US Treasuries', 'FX: EUR/USD', 'Commodities: GLD', 'Tech Index', 'ESG Fund A'];
+
+// --- HELPER FUNCTIONS ---
+const formatCurrency = (val) => {
+  const formatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  return formatted.replace('$', '₮') + ' USDT';
+};
+const formatDate = (date) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // App State
+  const [balance, setBalance] = useState(INITIAL_INVESTMENT);
+  const [dailyProfit, setDailyProfit] = useState(0);
+  const [totalProfit, setTotalProfit] = useState(0);
+  const [recentTrades, setRecentTrades] = useState([]);
+  
+  // Yield & Contract State
+  const [currentDay, setCurrentDay] = useState(15);
+  const [yieldCurve, setYieldCurve] = useState(INITIAL_YIELD_CURVE);
+  const [activeContracts, setActiveContracts] = useState([
+    { id: 'c-1', amount: INITIAL_INVESTMENT, lockInDays: getLockInDays(INITIAL_INVESTMENT), startDate: START_DATE }
+  ]);
+  
+  // Transaction State
+  const [transactions, setTransactions] = useState([
+    { id: 'tx-1', type: 'Deposit', amount: INITIAL_INVESTMENT, date: START_DATE, status: 'Completed' }
+  ]);
+  
+  // Modal States
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+
+  // Calculate Lock-in Progress based on primary/latest contract
+  const primaryContract = activeContracts[activeContracts.length - 1];
+  const daysLeft = Math.max(0, primaryContract.lockInDays - currentDay);
+  const lockProgress = Math.min(100, (currentDay / primaryContract.lockInDays) * 100);
+
+  useEffect(() => {
+    // Generate initial historical yield
+    let initialTotalProfit = 0;
+    const initialTrades = Array.from({ length: 15 }).map((_, i) => {
+       const dayIndex = i % 33;
+       const dailyRate = INITIAL_YIELD_CURVE[dayIndex];
+       const profit = INITIAL_INVESTMENT * dailyRate;
+       initialTotalProfit += profit;
+       return {
+         id: `day-${i}`,
+         pair: `Yield Cycle - Day ${dayIndex + 1}/33`,
+         type: 'YIELD DIST',
+         profit: profit,
+         date: new Date(START_DATE.getTime() + i * 24 * 3600000)
+       };
+    }).reverse();
+    
+    setRecentTrades(initialTrades.slice(0, 10));
+    setTotalProfit(initialTotalProfit);
+    setBalance(INITIAL_INVESTMENT + initialTotalProfit);
+
+    const interval = setInterval(() => {
+      setCurrentDay(prevDay => {
+        const newDay = prevDay + 1;
+        const cycleDay = (newDay - 1) % 33;
+        
+        setYieldCurve(prevCurve => {
+           const activeCurve = cycleDay === 0 ? generate33DayCurve() : prevCurve;
+           
+           setActiveContracts(contracts => {
+             const activePrincipal = contracts.reduce((sum, c) => sum + c.amount, 0);
+             const generatedProfit = activePrincipal * activeCurve[cycleDay];
+             
+             setDailyProfit(generatedProfit);
+             setTotalProfit(prevTotal => prevTotal + generatedProfit);
+             setBalance(prevBalance => prevBalance + generatedProfit);
+             
+             setRecentTrades(prevTrades => [{
+               id: `day-${newDay}`,
+               pair: `Yield Cycle - Day ${cycleDay + 1}/33`,
+               type: 'YIELD DIST',
+               profit: generatedProfit,
+               date: new Date()
+             }, ...prevTrades].slice(0, 10));
+             
+             return contracts;
+           });
+           
+           return activeCurve;
+        });
+        return newDay;
+      });
+    }, 6000); // 1 day = 6 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleDeposit = (amount) => {
+    setBalance(prev => prev + amount);
+    const lockDays = getLockInDays(amount);
+    setActiveContracts(prev => [...prev, {
+      id: `c-${Math.random().toString(36).substr(2, 9)}`,
+      amount: amount,
+      lockInDays: lockDays,
+      startDate: new Date()
+    }]);
+    setTransactions(prev => [{
+      id: `tx-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'Deposit',
+      amount: amount,
+      date: new Date(),
+      status: 'Completed'
+    }, ...prev]);
+  };
+
+  const handleWithdraw = (amount) => {
+    setBalance(prev => prev - amount);
+    setTransactions(prev => [{
+      id: `tx-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'Withdrawal',
+      amount: amount,
+      date: new Date(),
+      status: 'Completed'
+    }, ...prev]);
+  };
+
+  const navItems = [
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+    { id: 'wallet', label: 'Transfers & Activity', icon: Wallet },
+    { id: 'referrals', label: 'Partner Program', icon: Users },
+    { id: 'profile', label: 'Account Settings', icon: User },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#F8F9FA] text-gray-900 font-sans selection:bg-blue-600 selection:text-white flex overflow-hidden">
+      
+      {/* Sidebar - Desktop */}
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <div className="p-6 flex items-center space-x-3 group cursor-pointer">
+          <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-bold text-gray-900 tracking-tight">
+            Nova Capital
+          </span>
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium ${
+                  isActive 
+                    ? 'bg-blue-50 text-blue-700' 
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-gray-100">
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div className="flex items-center space-x-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>System Status</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+              </span>
+              <span className="text-sm font-medium text-gray-700">Market Open & Active</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4">
+        <div className="flex items-center space-x-2">
+          <Building2 className="w-6 h-6 text-blue-600" />
+          <span className="text-lg font-bold tracking-tight">Nova Capital</span>
+        </div>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-600 hover:text-gray-900 transition-colors">
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 top-16 bg-white z-40 p-4 animate-in slide-in-from-top-2 duration-300">
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-lg transition-colors font-medium ${
+                    isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden pt-16 md:pt-0">
+        <div className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full">
+          
+          {/* Top Header */}
+          <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 tracking-tight">
+                {activeTab === 'dashboard' && 'Portfolio Overview'}
+                {activeTab === 'wallet' && 'Transfers & Activity'}
+                {activeTab === 'referrals' && 'Partner Program'}
+                {activeTab === 'profile' && 'Account Settings'}
+              </h1>
+              <p className="text-gray-500 text-sm md:text-base max-w-2xl">
+                {activeTab === 'dashboard' && 'Monitor your asset allocation and daily algorithmic performance.'}
+                {activeTab === 'wallet' && 'Manage your liquidity, view transaction history, and initiate transfers.'}
+                {activeTab === 'referrals' && 'Invite eligible clients to earn institutional yield bonuses.'}
+                {activeTab === 'profile' && 'Manage your profile, security preferences, and compliance status.'}
+              </p>
+            </div>
+            
+            {activeTab === 'dashboard' && (
+              <div className="flex space-x-3 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
+                <button 
+                  onClick={() => setIsDepositModalOpen(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors flex items-center space-x-2"
+                >
+                  <ArrowDownToLine className="w-4 h-4" />
+                  <span>Deposit</span>
+                </button>
+                <button 
+                  onClick={() => setIsWithdrawModalOpen(true)}
+                  className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg border border-gray-300 shadow-sm transition-colors flex items-center space-x-2"
+                >
+                  <ArrowUpFromLine className="w-4 h-4" />
+                  <span>Withdraw</span>
+                </button>
+              </div>
+            )}
+          </header>
+
+          <div className="relative">
+            {activeTab === 'dashboard' && (
+              <DashboardView 
+                balance={balance} 
+                dailyProfit={dailyProfit} 
+                totalProfit={totalProfit} 
+                recentTrades={recentTrades} 
+                daysLeft={daysLeft}
+                lockProgress={lockProgress}
+              />
+            )}
+            {activeTab === 'wallet' && (
+              <WalletView 
+                balance={balance} 
+                totalProfit={totalProfit}
+                transactions={transactions}
+                onOpenDeposit={() => setIsDepositModalOpen(true)}
+                onOpenWithdraw={() => setIsWithdrawModalOpen(true)}
+                activeContracts={activeContracts}
+              />
+            )}
+            {activeTab === 'referrals' && <ReferralView />}
+            {activeTab === 'profile' && <ProfileView />}
+          </div>
+        </div>
+      </main>
+
+      {/* Modals */}
+      <DepositModal 
+        isOpen={isDepositModalOpen} 
+        onClose={() => setIsDepositModalOpen(false)} 
+        onConfirm={handleDeposit} 
+      />
+      <WithdrawModal 
+        isOpen={isWithdrawModalOpen} 
+        onClose={() => setIsWithdrawModalOpen(false)} 
+        onConfirm={handleWithdraw}
+        activeContracts={activeContracts}
+        balance={balance}
+      />
+    </div>
+  );
+}
+
+function DashboardView({ balance, dailyProfit, totalProfit, recentTrades, daysLeft, lockProgress }) {
+  return (
+    <div className="space-y-6">
+      
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Total Balance Card */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <span className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-md">
+              <ArrowUpRight className="w-3 h-3 mr-1" />
+              +{(totalProfit / INITIAL_INVESTMENT * 100).toFixed(2)}%
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 font-medium mb-1">Total Net Asset Value</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{formatCurrency(balance)}</h2>
+        </div>
+
+        {/* Daily Profit Card */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-75">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-gray-50 text-gray-600 rounded-lg">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-sm text-gray-500 font-medium mb-1">Intraday Est. Yield</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight text-green-600">{formatCurrency(dailyProfit)}</h2>
+        </div>
+
+        {/* Total Profit Card */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
+           <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-gray-50 text-gray-600 rounded-lg">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+              Target: 3% / 33 Days
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 font-medium mb-1">Cumulative Returns</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{formatCurrency(totalProfit)}</h2>
+          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-4 overflow-hidden">
+            <div className="bg-blue-600 h-1.5 rounded-full w-[4.5%]" />
+          </div>
+        </div>
+
+        {/* Lock-in Status Card */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
+           <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-gray-50 text-gray-600 rounded-lg">
+              <Lock className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-sm text-gray-500 font-medium mb-1">Capital Lock Period</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+            {daysLeft > 0 ? `${daysLeft} Days Remaining` : 'Fully Vested'}
+          </h2>
+          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-1000 ${daysLeft > 0 ? 'bg-amber-500' : 'bg-green-500'}`} 
+              style={{ width: `${lockProgress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Live Trades Table */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+        <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+          <div className="flex items-center space-x-2">
+            <Activity className="w-5 h-5 text-gray-700" />
+            <h3 className="text-lg font-semibold text-gray-900">Algorithmic Yield Execution Log</h3>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-100">Live Yield Simulation</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <tr>
+                <th className="px-6 py-3">Yield Cycle</th>
+                <th className="px-6 py-3">Distribution</th>
+                <th className="px-6 py-3">Timestamp</th>
+                <th className="px-6 py-3 text-right">Realized Impact</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {recentTrades.map((trade, index) => (
+                <tr 
+                  key={trade.id} 
+                  className="hover:bg-gray-50 transition-colors animate-in fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <td className="px-6 py-4 font-medium text-gray-900 flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                    <span>{trade.pair}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                      {trade.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-500 flex items-center">
+                    {trade.date.toLocaleTimeString()}
+                  </td>
+                  <td className="px-6 py-4 text-right font-medium">
+                    <span className={`flex items-center justify-end space-x-1 ${trade.profit > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {trade.profit > 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                      <span>{trade.profit > 0 ? '+' : ''}{formatCurrency(trade.profit)}</span>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WalletView({ balance, totalProfit, transactions, onOpenDeposit, onOpenWithdraw, activeContracts }) {
+  const lockedAmount = activeContracts.reduce((sum, c) => sum + c.amount, 0);
+  const availableAmount = balance - lockedAmount;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      
+      {/* Wallet Overview Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Main Balance */}
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-8 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center space-x-2 text-gray-500 mb-2">
+              <Wallet className="w-5 h-5" />
+              <span className="font-medium">Total Available Equity</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-2">{formatCurrency(balance)}</h2>
+            <p className="text-green-600 font-medium text-sm flex items-center">
+              <ArrowUpRight className="w-4 h-4 mr-1" />
+              {formatCurrency(totalProfit)} Yield to Date
+            </p>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button 
+              onClick={onOpenDeposit}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center space-x-2"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+              <span>Fund Account</span>
+            </button>
+            <button 
+              onClick={onOpenWithdraw}
+              className="px-6 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-lg border border-gray-300 shadow-sm transition-colors flex items-center space-x-2"
+            >
+              <ArrowUpFromLine className="w-4 h-4" />
+              <span>Withdraw Funds</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Liquidity Details */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col justify-center space-y-6">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm font-medium text-gray-500">Liquid / Available</span>
+              <Check className="w-4 h-4 text-green-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 tracking-tight">{formatCurrency(availableAmount)}</div>
+            <p className="text-xs text-gray-400 mt-1">Profits + Unlocked Principal</p>
+          </div>
+          
+          <div className="h-px w-full bg-gray-100" />
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm font-medium text-gray-500">Vesting / Locked</span>
+              <Lock className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 tracking-tight">{formatCurrency(lockedAmount)}</div>
+            <p className="text-xs text-gray-400 mt-1">{activeContracts.length} Active Contracts</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Transaction History */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-gray-200 bg-gray-50/50 flex items-center space-x-2">
+          <History className="w-5 h-5 text-gray-700" />
+          <h3 className="text-lg font-semibold text-gray-900">Transfer History</h3>
+        </div>
+
+        {transactions.length === 0 ? (
+          <div className="text-center py-10 text-gray-500">
+            No recent transfers found.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-3">Transaction Type</th>
+                  <th className="px-6 py-3">Date & Time</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900 flex items-center space-x-3">
+                      <div className={`p-1.5 rounded-md ${tx.type === 'Deposit' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                        {tx.type === 'Deposit' ? <ArrowDownToLine className="w-4 h-4" /> : <ArrowUpFromLine className="w-4 h-4" />}
+                      </div>
+                      <span>{tx.type}</span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      {formatDate(tx.date)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                        {tx.status}
+                      </span>
+                    </td>
+                    <td className={`px-6 py-4 text-right font-medium ${tx.type === 'Deposit' ? 'text-green-600' : 'text-gray-900'}`}>
+                      {tx.type === 'Deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReferralView() {
+  const [copied, setCopied] = useState(false);
+  const referralLink = `https://novacapital.app/join?ref=${MOCK_USER.referralCode}`;
+
+  const copyToClipboard = () => {
+    try {
+      navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+    } catch (err) {
+      const textArea = document.createElement("textarea");
+      textArea.value = referralLink;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopied(true);
+    }
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="bg-white border border-gray-200 rounded-xl p-8 md:p-12 text-center shadow-sm">
+        <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
+           <Users className="w-10 h-10 text-blue-600" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">Partner & Earn 1% Continuously</h2>
+        <p className="text-gray-500 max-w-xl mx-auto mb-8 text-sm md:text-base">
+          Invite eligible clients to Nova Capital. When they fund their account, you will receive a continuous 1% annualized yield bonus based on their active principal, distributed daily.
+        </p>
+
+        <div className="max-w-md mx-auto bg-gray-50 border border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 rounded-lg p-1.5 flex items-center transition-all shadow-sm">
+          <input 
+            type="text" 
+            readOnly 
+            value={referralLink}
+            className="bg-transparent border-none outline-none text-gray-700 w-full px-3 text-sm font-medium"
+          />
+          <button 
+            onClick={copyToClipboard}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-sm transition-all ${
+              copied ? 'bg-green-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm'
+            }`}
+          >
+            {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <span>{copied ? 'Copied' : 'Copy'}</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="text-gray-500 text-sm font-medium mb-1">Total Referrals</div>
+          <div className="text-3xl font-bold text-gray-900 tracking-tight">4</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="text-gray-500 text-sm font-medium mb-1">Active Accounts</div>
+          <div className="text-3xl font-bold text-gray-900 tracking-tight">3</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="text-gray-500 text-sm font-medium mb-1">Cumulative Bonus Earned</div>
+          <div className="text-3xl font-bold text-green-600 tracking-tight">$142.50</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileView() {
+  return (
+    <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        
+        <div className="p-8 border-b border-gray-200 flex flex-col md:flex-row items-center gap-6 bg-gray-50/50">
+          <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-2xl font-bold text-gray-600 shadow-sm border border-gray-300">
+            {MOCK_USER.name.split(' ').map(n => n[0]).join('')}
+          </div>
+          <div className="text-center md:text-left">
+            <h2 className="text-xl font-bold text-gray-900 tracking-tight">{MOCK_USER.name}</h2>
+            <p className="text-sm text-gray-500 mb-3">{MOCK_USER.email}</p>
+            <div className="inline-flex items-center space-x-1.5 bg-green-50 text-green-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-green-200">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>KYC {MOCK_USER.kycStatus}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 space-y-6">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Account Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-500">Full Legal Name</label>
+              <input type="text" disabled value={MOCK_USER.name} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-700 cursor-not-allowed text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-500">Email Address</label>
+              <input type="email" disabled value={MOCK_USER.email} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-700 cursor-not-allowed text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-500">Account Classification</label>
+              <input type="text" disabled value={MOCK_USER.accountType} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-900 font-medium cursor-not-allowed text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-500">Client Since</label>
+              <input type="text" disabled value={formatDate(MOCK_USER.joinDate).split(',')[0]} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-700 cursor-not-allowed text-sm" />
+            </div>
+          </div>
+
+          <hr className="border-gray-200 my-8" />
+          
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Security Settings</h3>
+            <button className="flex items-center justify-between w-full p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-gray-600" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900 text-sm">Update Password</div>
+                  <div className="text-xs text-gray-500">Modify your login credentials</div>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DepositModal({ isOpen, onClose, onConfirm }) {
+  const [amount, setAmount] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const val = parseFloat(amount);
+    if (val > 0) {
+      setIsProcessing(true);
+      setTimeout(() => {
+        onConfirm(val);
+        setIsProcessing(false);
+        setAmount('');
+        onClose();
+      }, 1500); 
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white border border-gray-200 rounded-xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
+        
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 tracking-tight flex items-center">
+              Deposit Funds
+            </h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors bg-gray-100 p-1.5 rounded-full hover:bg-gray-200">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Amount (USDT)</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₮</span>
+                <input 
+                  type="number" 
+                  required
+                  min="100"
+                  step="100"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="1,000"
+                  className="w-full bg-white border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg pl-8 pr-4 py-2.5 text-gray-900 placeholder-gray-400 outline-none transition-shadow text-lg font-medium"
+                />
+              </div>
+              <p className="text-xs text-gray-500">Minimum deposit: 100.00 USDT</p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start space-x-3">
+              <Lock className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-900/80 leading-relaxed w-full">
+                Deposits are subject to dynamic vesting periods based on tier:
+                <ul className="list-disc ml-5 mt-1 font-semibold text-blue-700 space-y-1">
+                  <li>5 Months (≥ 5,000 USDT)</li>
+                  <li>8 Months (1,000 - 4,999 USDT)</li>
+                  <li>12 Months (&lt; 1,000 USDT)</li>
+                </ul>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={isProcessing || !amount || parseFloat(amount) > availableAmount || availableAmount <= 0}
+              className="w-full py-3 bg-gray-900 hover:bg-black text-white font-medium rounded-lg shadow-sm transition-colors flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Execute Withdrawal'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WithdrawModal({ isOpen, onClose, onConfirm, activeContracts = [], balance }) {
+  const [amount, setAmount] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const lockedAmount = activeContracts.reduce((sum, c) => sum + c.amount, 0);
+  const availableAmount = balance - lockedAmount;
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const val = parseFloat(amount);
+    if (val > 0 && val <= availableAmount) {
+      setIsProcessing(true);
+      setTimeout(() => {
+        onConfirm(val);
+        setIsProcessing(false);
+        setAmount('');
+        onClose();
+      }, 1500); 
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white border border-gray-200 rounded-xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
+        
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 tracking-tight flex items-center">
+              Withdraw Funds
+            </h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors bg-gray-100 p-1.5 rounded-full hover:bg-gray-200">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-500 font-medium">Available to Withdraw:</span>
+                <span className="text-lg font-bold text-gray-900">{formatCurrency(availableAmount)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-400">Locked Principal:</span>
+                <span className="text-xs font-medium text-gray-500">{formatCurrency(lockedAmount)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Amount (USDT)</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₮</span>
+                <input 
+                  type="number" 
+                  required
+                  min="10"
+                  max={availableAmount}
+                  step="10"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-white border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg pl-8 pr-4 py-2.5 text-gray-900 placeholder-gray-400 outline-none transition-shadow text-lg font-medium"
+                />
+              </div>
+              <p className="text-xs text-gray-500">Maximum withdrawal: {formatCurrency(availableAmount)}</p>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={isProcessing || !amount || parseFloat(amount) > availableAmount || availableAmount <= 0}
+              className="w-full py-3 bg-gray-900 hover:bg-black text-white font-medium rounded-lg shadow-sm transition-colors flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm Withdrawal'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
