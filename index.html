@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nova Capital | Investment Dashboard</title>
+    <title>Zennith Capital | Investment Dashboard</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -144,7 +144,7 @@
             email: "alexander.r@example.com",
             kycStatus: "Verified",
             joinDate: START_DATE,
-            referralCode: "NOVA-XR782Q",
+            referralCode: "ZENNITH-XR782Q",
             accountType: "Institutional Standard"
         };
 
@@ -448,7 +448,7 @@
                                     <i className="fas fa-building text-white text-lg"></i>
                                 </div>
                                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 tracking-tight">
-                                    Nova Capital
+                                    Zennith Capital
                                 </span>
                             </div>
                         </div>
@@ -493,7 +493,7 @@
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
                                 <i className="fas fa-building text-white text-sm"></i>
                             </div>
-                            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Nova Capital</span>
+                            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Zennith Capital</span>
                         </div>
                         <div className="flex items-center space-x-4">
                             <button onClick={() => setIsDark(!isDark)} className="text-slate-600 dark:text-slate-400">
@@ -644,11 +644,11 @@
                             subtitle={
                                 <div className="w-full mt-2">
                                     <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-                                        <span>Target: 3%</span>
-                                        <span>33 Days</span>
+                                        <span>Algorithmic Yield</span>
+                                        <span className="text-emerald-500 flex items-center"><i className="fas fa-circle text-[8px] mr-1 animate-pulse"></i> Active</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                                        <div className="bg-indigo-500 h-1.5 rounded-full w-[4.5%] animate-pulse"></div>
+                                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden relative">
+                                        <div className="absolute top-0 left-0 h-full bg-indigo-500 w-full animate-pulse opacity-50"></div>
                                     </div>
                                 </div>
                             }
@@ -900,7 +900,7 @@
 
         function ReferralView() {
             const [copied, setCopied] = useState(false);
-            const referralLink = `https://novacapital.app/join?ref=${MOCK_USER.referralCode}`;
+            const referralLink = `https://zennithcapital.app/join?ref=${MOCK_USER.referralCode}`;
 
             const copyToClipboard = () => {
                 navigator.clipboard.writeText(referralLink).then(() => {
@@ -926,9 +926,9 @@
                             <div className="inline-flex p-5 bg-brand-50 dark:bg-brand-900/30 rounded-2xl mb-6 shadow-inner border border-brand-100 dark:border-brand-800">
                                 <i className="fas fa-handshake text-4xl text-brand-600 dark:text-brand-400 animate-float"></i>
                             </div>
-                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Partner & Earn 1% Continuously</h2>
+                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Direct Partner Program: Earn 10%</h2>
                             <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-10 text-base md:text-lg">
-                                Invite eligible clients to Nova Capital. When they fund their account, you receive a continuous 1% annualized yield bonus based on their active principal, distributed daily.
+                                Invite eligible clients to Zennith Capital. As a Direct Partner, you will earn a 10% commission generated directly from the daily algorithmic profits of your referrals.
                             </p>
 
                             <div className="max-w-lg mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus-within:border-brand-500 dark:focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 rounded-xl p-1.5 flex items-center transition-all shadow-md">
