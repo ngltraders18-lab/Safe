@@ -18,7 +18,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel for in-browser JSX compilation (Perfect for GitHub Pages without build steps) -->
+    <!-- Babel for in-browser JSX compilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
@@ -31,10 +31,12 @@
                     },
                     colors: {
                         brand: {
-                            50: '#ecfdf5',
-                            100: '#d1fae5',
-                            500: '#10b981',
+                            50: '#f0fdf4',   // Greenish-emerald spectrum light theme background
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            500: '#10b981',  // Main brand accent emerald
                             600: '#059669',
+                            700: '#047857',
                             900: '#064e3b',
                         }
                     },
@@ -71,20 +73,20 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Glassmorphism utilities */
+        /* Premium Green-accented Glassmorphism */
         .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(16, 185, 129, 0.15);
         }
         
         .dark .glass {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.1);
         }
 
-        /* Custom Scrollbar */
+        /* Custom Modern Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -93,17 +95,16 @@
             background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
+            background: #a7f3d0;
             border-radius: 10px;
         }
         .dark ::-webkit-scrollbar-thumb {
-            background: #475569;
+            background: #064e3b;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            background: #10b981;
         }
 
-        /* Hide number input spinners */
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
             -webkit-appearance: none;
@@ -115,37 +116,30 @@
         .delay-300 { animation-delay: 300ms; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300 text-slate-900 dark:text-slate-100 selection:bg-brand-500 selection:text-white">
+<body class="bg-emerald-50/30 dark:bg-slate-950 transition-colors duration-300 text-slate-900 dark:text-slate-100 selection:bg-brand-500 selection:text-white">
+    
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // --- MOCK DATA & CONFIG ---
-        const INITIAL_INVESTMENT = 5500;
-        const START_DATE = new Date(Date.now() - (15 * 24 * 60 * 60 * 1000)); // 15 days ago
+        // --- STREAMING_CHUNK: Initializing Fresh Account Configuration Constants ---
+        const INITIAL_INVESTMENT = 5000; // Starter account exactly $5,000
+        const START_DATE = new Date(Date.now() - (24 * 60 * 60 * 1000)); // Registered & funded 1 day ago
 
         const getLockInDays = (amount) => {
-            if (amount >= 5000) return 150;
+            if (amount >= 5000) return 150; // $5k or more gets 150-day premium cycle
             if (amount >= 1000) return 240;
             return 365;
         };
-
-        const generate33DayCurve = () => {
-            const weights = Array.from({ length: 33 }, () => Math.random() * 0.8 + 0.2);
-            const totalWeight = weights.reduce((a, b) => a + b, 0);
-            return weights.map(w => Math.pow(1.03, w / totalWeight) - 1); 
-        };
-
-        const INITIAL_YIELD_CURVE = generate33DayCurve();
 
         const MOCK_USER = {
             name: "Alexander Reed",
             email: "alexander.r@example.com",
             kycStatus: "Verified",
             joinDate: START_DATE,
-            referralCode: "ZENNITH-XR782Q",
-            accountType: "Institutional Standard"
+            referralCode: "ZENNITH-ZC5000",
+            accountType: "Institutional Starter"
         };
 
         const formatCurrency = (val) => {
@@ -155,8 +149,7 @@
         
         const formatDate = (date) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
 
-        // --- COMPONENTS ---
-
+        // --- STREAMING_CHUNK: Building Fresh Portfolio Chart Component ---
         function PortfolioChart({ historyData, isDark }) {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -168,12 +161,12 @@
 
                 const ctx = chartRef.current.getContext('2d');
                 
-                // Gradient Fill
-                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, isDark ? 'rgba(59, 130, 246, 0.5)' : 'rgba(37, 99, 235, 0.2)');
-                gradient.addColorStop(1, isDark ? 'rgba(59, 130, 246, 0)' : 'rgba(37, 99, 235, 0)');
+                // Pure Emerald Glow Gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, isDark ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.15)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
 
-                const labels = historyData.map((_, i) => `Day ${i + 1}`);
+                const labels = historyData.map(d => `Day ${d.day}`);
                 const dataPoints = historyData.map(d => d.balance);
 
                 chartInstance.current = new Chart(ctx, {
@@ -181,15 +174,16 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Portfolio Value (USDT)',
+                            label: 'Portfolio Balance (USDT)',
                             data: dataPoints,
-                            borderColor: isDark ? '#60a5fa' : '#2563eb',
+                            borderColor: '#10b981', // Solid Emerald Border
                             backgroundColor: gradient,
-                            borderWidth: 2,
-                            pointRadius: 0,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#10b981',
                             pointHoverRadius: 6,
                             fill: true,
-                            tension: 0.4
+                            tension: 0.1
                         }]
                     },
                     options: {
@@ -202,10 +196,10 @@
                         plugins: {
                             legend: { display: false },
                             tooltip: {
-                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                backgroundColor: isDark ? '#0f172a' : '#ffffff',
                                 titleColor: isDark ? '#f8fafc' : '#0f172a',
                                 bodyColor: isDark ? '#cbd5e1' : '#475569',
-                                borderColor: isDark ? '#334155' : '#e2e8f0',
+                                borderColor: 'rgba(16, 185, 129, 0.3)',
                                 borderWidth: 1,
                                 padding: 12,
                                 displayColors: false,
@@ -218,12 +212,13 @@
                         },
                         scales: {
                             x: {
-                                display: false,
+                                grid: { display: false },
+                                ticks: { color: isDark ? '#94a3b8' : '#64748b' }
                             },
                             y: {
                                 border: { display: false },
                                 grid: {
-                                    color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                    color: isDark ? 'rgba(16,185,129,0.05)' : 'rgba(16,185,129,0.03)',
                                     drawTicks: false,
                                 },
                                 ticks: {
@@ -249,22 +244,24 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Designing Core Application Container & Navigation... ---
         function App() {
-            // Theme State
             const [isDark, setIsDark] = useState(false);
-            
-            // Navigation State
             const [activeTab, setActiveTab] = useState('dashboard');
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             
-            // Core Financial State
+            // Starter Account Financial State setup
             const [balance, setBalance] = useState(INITIAL_INVESTMENT);
-            const [dailyProfit, setDailyProfit] = useState(0);
-            const [totalProfit, setTotalProfit] = useState(0);
-            const [recentTrades, setRecentTrades] = useState([]);
-            const [chartHistory, setChartHistory] = useState([]);
+            const [dailyProfit, setDailyProfit] = useState(0); // Day 1: Yield pending calculation
+            const [totalProfit, setTotalProfit] = useState(0); // Fresh account: No yield generated yet
+            const [recentTrades, setRecentTrades] = useState([]); // Empty log for fresh starter accounts
             
-            // Notifications State
+            // Clean Chart history showing the initial deposit event from Day 0 (pre-funded) to Day 1 (fully funded)
+            const [chartHistory, setChartHistory] = useState([
+                { day: 0, balance: 0, profit: 0 },
+                { day: 1, balance: INITIAL_INVESTMENT, profit: 0 }
+            ]);
+            
             const [toasts, setToasts] = useState([]);
 
             const addToast = (message, type = 'success') => {
@@ -275,13 +272,13 @@
                 }, 4000);
             };
             
-            // Yield & Contract State
-            const [currentDay, setCurrentDay] = useState(15);
-            const [yieldCurve, setYieldCurve] = useState(INITIAL_YIELD_CURVE);
+            // Capital Contract: Day 1 of 150
+            const [currentDay, setCurrentDay] = useState(1);
             const [activeContracts, setActiveContracts] = useState([
                 { id: 'c-1', amount: INITIAL_INVESTMENT, lockInDays: getLockInDays(INITIAL_INVESTMENT), startDate: START_DATE }
             ]);
             
+            // Initial funding record
             const [transactions, setTransactions] = useState([
                 { id: 'tx-1', type: 'Deposit', amount: INITIAL_INVESTMENT, date: START_DATE, status: 'Completed' }
             ]);
@@ -290,14 +287,13 @@
             const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
             // Computed values
-            const primaryContract = activeContracts[activeContracts.length - 1] || activeContracts[0];
-            const daysLeft = primaryContract ? Math.max(0, primaryContract.lockInDays - currentDay) : 0;
-            const lockProgress = primaryContract ? Math.min(100, (currentDay / primaryContract.lockInDays) * 100) : 100;
+            const primaryContract = activeContracts[0];
+            const daysLeft = primaryContract ? Math.max(0, primaryContract.lockInDays - (currentDay - 1)) : 0;
+            const lockProgress = primaryContract ? Math.min(100, ((currentDay - 1) / primaryContract.lockInDays) * 100) : 0;
             const lockedAmount = activeContracts.reduce((sum, c) => sum + c.amount, 0);
             const availableAmount = balance - lockedAmount;
 
             useEffect(() => {
-                // Apply theme
                 if (isDark) {
                     document.documentElement.classList.add('dark');
                 } else {
@@ -305,81 +301,7 @@
                 }
             }, [isDark]);
 
-            useEffect(() => {
-                // Generate historical data
-                let currentTotalProfit = 0;
-                let currentBal = INITIAL_INVESTMENT;
-                const initialHistory = [];
-                
-                const initialTrades = Array.from({ length: 15 }).map((_, i) => {
-                    const dayIndex = i % 33;
-                    const dailyRate = INITIAL_YIELD_CURVE[dayIndex];
-                    const profit = INITIAL_INVESTMENT * dailyRate;
-                    currentTotalProfit += profit;
-                    currentBal += profit;
-                    
-                    initialHistory.push({ day: i, balance: currentBal, profit });
-                    
-                    return {
-                        id: `day-${i}`,
-                        pair: `Yield Cycle - Day ${dayIndex + 1}/33`,
-                        type: 'YIELD DIST',
-                        profit: profit,
-                        date: new Date(START_DATE.getTime() + i * 24 * 3600000)
-                    };
-                }).reverse();
-                
-                setRecentTrades(initialTrades.slice(0, 10));
-                setTotalProfit(currentTotalProfit);
-                setBalance(currentBal);
-                setChartHistory(initialHistory);
-
-            }, []);
-
-            const handleDeposit = (amount) => {
-                setBalance(prev => prev + amount);
-                const lockDays = getLockInDays(amount);
-                setActiveContracts(prev => [...prev, {
-                    id: `c-${Math.random().toString(36).substr(2, 9)}`,
-                    amount: amount,
-                    lockInDays: lockDays,
-                    startDate: new Date()
-                }]);
-                setTransactions(prev => [{
-                    id: `tx-${Math.random().toString(36).substr(2, 9)}`,
-                    type: 'Deposit',
-                    amount: amount,
-                    date: new Date(),
-                    status: 'Completed'
-                }, ...prev]);
-                
-                // Update chart to reflect sudden spike
-                setChartHistory(prev => {
-                    const last = prev[prev.length - 1];
-                    return [...prev, { day: currentDay + 0.1, balance: last.balance + amount, profit: 0 }];
-                });
-                
-                addToast(`Successfully deposited ${formatCurrency(amount)}`, 'success');
-            };
-
-            const handleWithdraw = (amount) => {
-                setBalance(prev => prev - amount);
-                setTransactions(prev => [{
-                    id: `tx-${Math.random().toString(36).substr(2, 9)}`,
-                    type: 'Withdrawal',
-                    amount: amount,
-                    date: new Date(),
-                    status: 'Completed'
-                }, ...prev]);
-                
-                setChartHistory(prev => {
-                    const last = prev[prev.length - 1];
-                    return [...prev, { day: currentDay + 0.1, balance: last.balance - amount, profit: 0 }];
-                });
-
-                addToast(`Successfully withdrew ${formatCurrency(amount)}`, 'info');
-            };
-
+            // --- STREAMING_CHUNK: Constructing Dashboard Sidebar and Main Layout ---
             const navItems = [
                 { id: 'dashboard', label: 'Overview', icon: 'fa-chart-pie' },
                 { id: 'wallet', label: 'Transfers & Activity', icon: 'fa-wallet' },
@@ -389,13 +311,13 @@
             ];
 
             return (
-                <div className="min-h-screen flex overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-100 via-slate-50 to-slate-200 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950">
+                <div className="min-h-screen flex overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-50 via-slate-50 to-emerald-100/50 dark:from-slate-900 dark:via-slate-950 dark:to-emerald-950/20">
                     
-                    {/* Toast Container */}
+                    {/* Dynamic Alert Toasts */}
                     <div className="fixed top-4 right-4 z-[9999] space-y-3 flex flex-col items-end">
                         {toasts.map(toast => (
                             <div key={toast.id} className={`animate-slide-in-right flex items-center space-x-3 px-4 py-3 rounded-xl shadow-lg border ${
-                                toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300' :
+                                toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-300' :
                                 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
                             }`}>
                                 <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} text-lg`}></i>
@@ -404,14 +326,14 @@
                         ))}
                     </div>
 
-                    {}
-                    <aside className="hidden md:flex flex-col w-64 glass border-r border-slate-200/50 dark:border-slate-700/50 z-20 relative transition-all duration-300">
+                    {/* Left Sidebar Layout */}
+                    <aside className="hidden md:flex flex-col w-66 glass border-r border-emerald-100/40 dark:border-slate-800/50 z-20 relative transition-all duration-300">
                         <div className="p-6 flex justify-between items-center group">
-                            <div className="flex items-center space-x-3 cursor-pointer hover:scale-105 transition-transform">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg shadow-brand-500/30">
-                                    <i className="fas fa-building text-white text-lg"></i>
+                            <div className="flex items-center space-x-3 cursor-pointer hover:scale-[1.02] transition-transform">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                                    <i className="fas fa-chart-line text-white text-lg"></i>
                                 </div>
-                                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 tracking-tight">
+                                <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-900 to-slate-700 dark:from-white dark:to-emerald-400 tracking-tight">
                                     Zennith Capital
                                 </span>
                             </div>
@@ -424,38 +346,38 @@
                                     <button
                                         key={item.id}
                                         onClick={() => setActiveTab(item.id)}
-                                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-medium animate-fade-in-up ${
+                                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-semibold animate-fade-in-up ${
                                             isActive 
-                                                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 shadow-sm' 
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-emerald-50/50 dark:hover:bg-slate-800/40 hover:text-emerald-800 dark:hover:text-emerald-300'
                                         }`}
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >
-                                        <i className={`fas ${item.icon} w-5 text-center ${isActive ? 'text-brand-600 dark:text-brand-400' : 'opacity-70'}`}></i>
+                                        <i className={`fas ${item.icon} w-5 text-center ${isActive ? 'text-white' : 'opacity-70 group-hover:opacity-100'}`}></i>
                                         <span>{item.label}</span>
                                     </button>
                                 );
                             })}
                         </nav>
 
-                        <div className="p-4 border-t border-slate-200/50 dark:border-slate-700/50">
+                        <div className="p-4 border-t border-emerald-100/30 dark:border-slate-800/50">
                             <button 
                                 onClick={() => setIsDark(!isDark)}
-                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium text-slate-700 dark:text-slate-300"
+                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-500/5 dark:bg-slate-800/50 hover:bg-emerald-500/10 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-emerald-800 dark:text-emerald-400"
                             >
                                 <div className="flex items-center space-x-3">
                                     <i className={`fas ${isDark ? 'fa-sun' : 'fa-moon'} w-5 text-center`}></i>
-                                    <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                                    <span>{isDark ? 'Light Mode' : 'Dark Theme'}</span>
                                 </div>
                             </button>
                         </div>
                     </aside>
 
-                    {}
-                    <div className="md:hidden fixed top-0 left-0 right-0 h-16 glass border-b border-slate-200/50 dark:border-slate-700/50 z-50 flex items-center justify-between px-4">
+                    {/* Mobile Navigation Header */}
+                    <div className="md:hidden fixed top-0 left-0 right-0 h-16 glass border-b border-emerald-100/30 dark:border-slate-800/50 z-50 flex items-center justify-between px-4">
                         <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-                                <i className="fas fa-building text-white text-sm"></i>
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center">
+                                <i className="fas fa-chart-line text-white text-sm"></i>
                             </div>
                             <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Zennith Capital</span>
                         </div>
@@ -469,7 +391,7 @@
                         </div>
                     </div>
 
-                    {/* Mobile Menu */}
+                    {}
                     {isMobileMenuOpen && (
                         <div className="md:hidden fixed inset-0 top-16 glass z-40 p-4 animate-fade-in-up">
                             <nav className="space-y-2">
@@ -477,8 +399,8 @@
                                     <button
                                         key={item.id}
                                         onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                                        className={`w-full flex items-center space-x-3 px-4 py-4 rounded-xl transition-colors font-medium ${
-                                            activeTab === item.id ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        className={`w-full flex items-center space-x-3 px-4 py-4 rounded-xl transition-colors font-bold ${
+                                            activeTab === item.id ? 'bg-emerald-500 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800'
                                         }`}
                                     >
                                         <i className={`fas ${item.icon} w-5 text-center`}></i>
@@ -489,22 +411,23 @@
                         </div>
                     )}
 
-                    {}
+                    {/* Main Workspace Frame */}
                     <main className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden pt-16 md:pt-0 relative">
                         <div className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full relative z-10">
                             
                             <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
                                 <div>
-                                    <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
+                                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">
                                         {activeTab === 'dashboard' && 'Portfolio Overview'}
                                         {activeTab === 'wallet' && 'Liquidity Management'}
                                         {activeTab === 'referrals' && 'Partner Program'}
                                         {activeTab === 'profile' && 'Account Settings'}
+                                        {activeTab === 'support' && 'Help & Support'}
                                     </h1>
                                     <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base max-w-2xl">
                                         {activeTab === 'dashboard' && 'Real-time performance tracking of your algorithmic yields.'}
                                         {activeTab === 'wallet' && 'Manage your liquidity, view transaction history, and initiate secure transfers.'}
-                                        {activeTab === 'referrals' && 'Invite eligible clients to earn institutional yield bonuses continuously.'}
+                                        {activeTab === 'referrals' && 'Invite partners to earn 10% commission generated directly from their profits.'}
                                         {activeTab === 'profile' && 'Manage your profile, security preferences, and compliance status.'}
                                         {activeTab === 'support' && 'Get in touch with our Telegram support team for assistance.'}
                                     </p>
@@ -514,14 +437,14 @@
                                     <div className="flex space-x-3">
                                         <button 
                                             onClick={() => setIsDepositModalOpen(true)}
-                                            className="px-5 py-2.5 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white text-sm font-medium rounded-xl shadow-lg shadow-brand-500/25 transition-all hover:scale-105 flex items-center space-x-2"
+                                            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.03] flex items-center space-x-2"
                                         >
                                             <i className="fas fa-arrow-down"></i>
                                             <span>Deposit</span>
                                         </button>
                                         <button 
                                             onClick={() => setIsWithdrawModalOpen(true)}
-                                            className="px-5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:scale-105 flex items-center space-x-2"
+                                            className="px-5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:scale-[1.03] flex items-center space-x-2"
                                         >
                                             <i className="fas fa-arrow-up"></i>
                                             <span>Withdraw</span>
@@ -530,6 +453,7 @@
                                 )}
                             </header>
 
+                            {}
                             <div className="relative">
                                 {activeTab === 'dashboard' && (
                                     <DashboardView 
@@ -562,7 +486,7 @@
                         </div>
                     </main>
 
-                    {/* Modals */}
+                    {/* Interactive Functional Modals */}
                     <DepositModal 
                         isOpen={isDepositModalOpen} 
                         onClose={() => setIsDepositModalOpen(false)} 
@@ -577,26 +501,28 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Designing Fresh Portfolio Dashboard View ---
         function DashboardView({ balance, dailyProfit, totalProfit, recentTrades, daysLeft, lockProgress, chartHistory, isDark }) {
             return (
                 <div className="space-y-6">
-                    {/* Top Stats Row */}
+                    
+                    {/* Visual Highlights Stats Row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <StatCard 
                             title="Total Net Asset Value" 
                             value={formatCurrency(balance)} 
                             icon="fa-wallet" 
                             color="brand"
-                            subtitle={<span className="text-green-500 flex items-center text-xs font-semibold bg-green-500/10 px-2 py-1 rounded-md w-fit"><i className="fas fa-arrow-trend-up mr-1.5"></i>+{(totalProfit / INITIAL_INVESTMENT * 100).toFixed(2)}% ROI</span>}
+                            subtitle={<span className="text-emerald-600 dark:text-emerald-400 flex items-center text-xs font-bold bg-emerald-500/10 px-2.5 py-1 rounded-md w-fit"><i className="fas fa-check-circle mr-1.5"></i>Starter Contract Active</span>}
                             delay="0"
                         />
                         <StatCard 
                             title="Intraday Est. Yield" 
-                            value={formatCurrency(dailyProfit)} 
+                            value="USDT Pending" 
                             icon="fa-bolt" 
                             color="emerald"
-                            valueColor="text-emerald-500 dark:text-emerald-400"
-                            subtitle={<span className="text-slate-500 dark:text-slate-400 text-xs">Simulated live distribution</span>}
+                            valueColor="text-amber-500 dark:text-amber-400"
+                            subtitle={<span className="text-slate-500 dark:text-slate-400 text-xs">Awaiting first cycle calculation</span>}
                             delay="delay-100"
                         />
                         <StatCard 
@@ -607,29 +533,29 @@
                             subtitle={
                                 <div className="w-full mt-2">
                                     <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-                                        <span>Algorithmic Yield</span>
-                                        <span className="text-emerald-500 flex items-center"><i className="fas fa-circle text-[8px] mr-1 animate-pulse"></i> Active</span>
+                                        <span>Yield Generation</span>
+                                        <span className="text-emerald-500 flex items-center"><i className="fas fa-circle text-[8px] mr-1 animate-pulse"></i> Initializing</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden relative">
-                                        <div className="absolute top-0 left-0 h-full bg-indigo-500 w-full animate-pulse opacity-50"></div>
+                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden relative">
+                                        <div className="absolute top-0 left-0 h-full bg-emerald-500 w-full animate-pulse opacity-55"></div>
                                     </div>
                                 </div>
                             }
                             delay="delay-200"
                         />
                         <StatCard 
-                            title="Capital Lock Period" 
-                            value={daysLeft > 0 ? `${daysLeft} Days` : 'Fully Vested'} 
+                            title="Vesting Lock Period" 
+                            value={`${daysLeft} Days`} 
                             icon="fa-lock" 
                             color="amber"
                             subtitle={
                                 <div className="w-full mt-2">
                                     <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
                                         <span>Vesting Progress</span>
-                                        <span>{lockProgress.toFixed(0)}%</span>
+                                        <span>{lockProgress.toFixed(1)}%</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                                        <div className={`h-full rounded-full transition-all duration-1000 ${daysLeft > 0 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${lockProgress}%` }} />
+                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                        <div className="h-full rounded-full transition-all duration-1000 bg-emerald-500" style={{ width: `${Math.max(1, lockProgress)}%` }} />
                                     </div>
                                 </div>
                             }
@@ -637,61 +563,190 @@
                         />
                     </div>
 
-                    {/* Chart Section */}
-                    <div className="glass rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-sm animate-fade-in-up delay-200">
+                    {/* Integrated Chart Panel */}
+                    <div className="glass rounded-2xl p-6 border border-emerald-500/10 dark:border-slate-800/50 shadow-sm animate-fade-in-up delay-200">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Portfolio Growth</h3>
-                            <div className="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 border border-brand-100 dark:border-brand-800">
+                            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">Starter Account Growth</h3>
+                            <div className="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/30">
                                 <span className="relative flex h-2 w-2 mr-1">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                 </span>
-                                Live Sync
+                                Algorithmic Stream Active
                             </div>
                         </div>
                         <PortfolioChart historyData={chartHistory} isDark={isDark} />
                     </div>
 
-                    {/* Trades Table */}
-                    <div className="glass rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm overflow-hidden animate-fade-in-up delay-300">
-                        <div className="p-5 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                    {}
+                    <div className="glass rounded-2xl border border-emerald-500/10 dark:border-slate-800/50 shadow-sm overflow-hidden animate-fade-in-up delay-300">
+                        <div className="p-5 border-b border-emerald-500/10 dark:border-slate-800/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
                             <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
+                                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600">
                                     <i className="fas fa-list"></i>
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Algorithmic Execution Log</h3>
+                                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">Algorithmic Execution Log</h3>
                             </div>
                         </div>
+                        
+                        <div className="p-12 text-center bg-white/40 dark:bg-slate-900/30 flex flex-col items-center justify-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                <i className="fas fa-microchip text-2xl animate-pulse"></i>
+                            </div>
+                            <div>
+                                <h4 className="text-md font-bold text-slate-950 dark:text-white">Yield Cycle Initializing</h4>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mt-1 mx-auto">
+                                    Account configured successfully. The first quantitative yield cycle trade will reflect here within 24 hours.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- STREAMING_CHUNK: Component Definition for Metric Cards ---
+        function StatCard({ title, value, icon, color, subtitle, delay, valueColor = "text-slate-950 dark:text-white" }) {
+            const colorMap = {
+                brand: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400',
+                emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400',
+                indigo: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400',
+                amber: 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400',
+            };
+
+            return (
+                <div className={`glass rounded-2xl p-6 border border-emerald-500/10 dark:border-slate-800/50 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in-up ${delay}`}>
+                    <div className="flex justify-between items-start mb-4">
+                        <div className={`p-3 rounded-xl ${colorMap[color]}`}>
+                            <i className={`fas ${icon} text-lg`}></i>
+                        </div>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">{title}</p>
+                    <h2 className={`text-2xl md:text-3xl font-extrabold tracking-tight mb-2 ${valueColor}`}>{value}</h2>
+                    {subtitle && <div className="mt-auto">{subtitle}</div>}
+                </div>
+            );
+        }
+
+        // --- STREAMING_CHUNK: Formulating Wallet Management Module ---
+        function WalletView({ balance, totalProfit, transactions, onOpenDeposit, onOpenWithdraw, availableAmount, lockedAmount, activeContracts }) {
+            const total = availableAmount + lockedAmount;
+            const availablePercent = total > 0 ? (availableAmount / total) * 100 : 0;
+            const lockedPercent = total > 0 ? (lockedAmount / total) * 100 : 100;
+
+            return (
+                <div className="space-y-6 animate-fade-in-up">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* Interactive Main Balance visual component */}
+                        <div className="lg:col-span-2 rounded-2xl p-8 shadow-xl bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-950 text-white relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-35 group-hover:opacity-50 transition-opacity duration-500"></div>
+                            
+                            <div className="relative z-10 flex flex-col h-full justify-between">
+                                <div>
+                                    <div className="flex items-center space-x-2 text-slate-300 mb-2">
+                                        <i className="fas fa-wallet opacity-80"></i>
+                                        <span className="font-bold text-xs tracking-wider uppercase">Vested Capital</span>
+                                    </div>
+                                    <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2">{formatCurrency(balance)}</h2>
+                                    <p className="text-emerald-400 font-semibold text-sm flex items-center bg-emerald-500/10 w-fit px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                                        <i className="fas fa-arrow-trend-up mr-2"></i>
+                                        USDT Starter Account Activated
+                                    </p>
+                                </div>
+
+                                <div className="mt-10 flex flex-wrap gap-4">
+                                    <button 
+                                        onClick={onOpenDeposit}
+                                        className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl shadow-lg transition-all hover:-translate-y-0.5 flex items-center space-x-2"
+                                    >
+                                        <i className="fas fa-arrow-down"></i>
+                                        <span>Fund Account</span>
+                                    </button>
+                                    <button 
+                                        onClick={onOpenWithdraw}
+                                        className="px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-bold rounded-xl border border-white/15 shadow-lg transition-all hover:-translate-y-0.5 flex items-center space-x-2"
+                                    >
+                                        <i className="fas fa-arrow-up"></i>
+                                        <span>Withdraw Funds</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Visual asset allocation layout */}
+                        <div className="glass rounded-2xl p-6 border border-emerald-500/10 dark:border-slate-800/50 shadow-sm flex flex-col justify-center space-y-6">
+                            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Asset Allocation</h3>
+                            
+                            <div className="w-full h-3 flex rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                <div className="bg-emerald-500 h-full transition-all duration-1000" style={{width: `${availablePercent}%`}}></div>
+                                <div className="bg-amber-500 h-full transition-all duration-1000" style={{width: `${lockedPercent}%`}}></div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-900 dark:text-white">Liquid Profit</p>
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400">Available immediately</p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-slate-950 dark:text-white">{formatCurrency(availableAmount)}</span>
+                                </div>
+                                
+                                <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-900 dark:text-white">Locked Principal</p>
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400">{activeContracts.length} Active Starter Cycle</p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-slate-950 dark:text-white">{formatCurrency(lockedAmount)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {}
+                    <div className="glass rounded-2xl border border-emerald-500/10 dark:border-slate-800/50 shadow-sm overflow-hidden mt-6">
+                        <div className="p-5 border-b border-emerald-500/10 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/30 flex items-center space-x-3">
+                            <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600">
+                                <i className="fas fa-history"></i>
+                            </div>
+                            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">Transfer History</h3>
+                        </div>
+                        
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/50 dark:border-slate-700/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                <thead className="bg-slate-50/80 dark:bg-slate-850 border-b border-emerald-500/10 dark:border-slate-800/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     <tr>
-                                        <th className="px-6 py-4">Yield Cycle</th>
-                                        <th className="px-6 py-4">Distribution Type</th>
-                                        <th className="px-6 py-4">Timestamp</th>
-                                        <th className="px-6 py-4 text-right">Realized Impact</th>
+                                        <th className="px-6 py-4">Transaction Type</th>
+                                        <th className="px-6 py-4">Date & Time</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 text-right">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100/50 dark:divide-slate-800/50">
-                                    {recentTrades.map((trade, index) => (
-                                        <tr key={trade.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                            <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-200 flex items-center space-x-3">
-                                                <div className="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></div>
-                                                <span>{trade.pair}</span>
+                                    {transactions.map((tx) => (
+                                        <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-slate-950 dark:text-slate-200 flex items-center space-x-3">
+                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                                    <i className="fas fa-arrow-down text-xs"></i>
+                                                </div>
+                                                <span>{tx.type}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
+                                                {formatDate(tx.date)}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-800 px-2.5 py-1 rounded-md">
-                                                    {trade.type}
+                                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                                                    {tx.status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono text-xs">
-                                                {trade.date.toLocaleTimeString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-medium">
-                                                <span className={`flex items-center justify-end space-x-1.5 ${trade.profit > 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500'}`}>
-                                                    <i className={`fas ${trade.profit > 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'} text-xs`}></i>
-                                                    <span>{trade.profit > 0 ? '+' : ''}{formatCurrency(trade.profit)}</span>
-                                                </span>
+                                            <td className="px-6 py-4 text-right font-extrabold text-emerald-600 dark:text-emerald-400">
+                                                +{formatCurrency(tx.amount)}
                                             </td>
                                         </tr>
                                     ))}
@@ -703,198 +758,36 @@
             );
         }
 
-        function StatCard({ title, value, icon, color, subtitle, delay, valueColor = "text-slate-900 dark:text-white" }) {
-            const colorMap = {
-                brand: 'bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400',
-                emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-                indigo: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
-                amber: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
-            };
-
-            return (
-                <div className={`glass rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in-up ${delay}`}>
-                    <div className="flex justify-between items-start mb-4">
-                        <div className={`p-3 rounded-xl ${colorMap[color]}`}>
-                            <i className={`fas ${icon} text-lg`}></i>
-                        </div>
-                    </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">{title}</p>
-                    <h2 className={`text-2xl md:text-3xl font-bold tracking-tight mb-2 ${valueColor}`}>{value}</h2>
-                    {subtitle && <div className="mt-auto">{subtitle}</div>}
-                </div>
-            );
-        }
-
-        function WalletView({ balance, totalProfit, transactions, onOpenDeposit, onOpenWithdraw, availableAmount, lockedAmount, activeContracts }) {
-            const total = availableAmount + lockedAmount;
-            const availablePercent = total > 0 ? (availableAmount / total) * 100 : 0;
-            const lockedPercent = total > 0 ? (lockedAmount / total) * 100 : 0;
-
-            return (
-                <div className="space-y-6 animate-fade-in-up">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        
-                        {/* Main Balance Card with Gradient */}
-                        <div className="lg:col-span-2 rounded-2xl p-8 shadow-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-brand-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
-                            <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
-                            
-                            <div className="relative z-10 flex flex-col h-full justify-between">
-                                <div>
-                                    <div className="flex items-center space-x-2 text-slate-300 mb-2">
-                                        <i className="fas fa-wallet opacity-80"></i>
-                                        <span className="font-medium text-sm tracking-wide uppercase">Total Equity</span>
-                                    </div>
-                                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">{formatCurrency(balance)}</h2>
-                                    <p className="text-emerald-400 font-medium text-sm flex items-center bg-emerald-400/10 w-fit px-3 py-1.5 rounded-lg border border-emerald-400/20">
-                                        <i className="fas fa-arrow-trend-up mr-2"></i>
-                                        {formatCurrency(totalProfit)} Total Yield Generated
-                                    </p>
-                                </div>
-
-                                <div className="mt-10 flex flex-wrap gap-4">
-                                    <button 
-                                        onClick={onOpenDeposit}
-                                        className="px-6 py-3 bg-brand-500 hover:bg-brand-400 text-white font-semibold rounded-xl shadow-lg transition-all hover:-translate-y-0.5 flex items-center space-x-2"
-                                    >
-                                        <i className="fas fa-arrow-down"></i>
-                                        <span>Fund Account</span>
-                                    </button>
-                                    <button 
-                                        onClick={onOpenWithdraw}
-                                        className="px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl border border-white/20 shadow-lg transition-all hover:-translate-y-0.5 flex items-center space-x-2"
-                                    >
-                                        <i className="fas fa-arrow-up"></i>
-                                        <span>Withdraw Funds</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Allocation breakdown */}
-                        <div className="glass rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-sm flex flex-col justify-center space-y-6">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2">Asset Allocation</h3>
-                            
-                            {/* Visual Bar */}
-                            <div className="w-full h-3 flex rounded-full overflow-hidden mb-2">
-                                <div className="bg-emerald-500 h-full transition-all duration-1000" style={{width: `${availablePercent}%`}}></div>
-                                <div className="bg-amber-500 h-full transition-all duration-1000" style={{width: `${lockedPercent}%`}}></div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                                        <div>
-                                            <p className="text-sm font-semibold text-slate-900 dark:text-white">Liquid Assets</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Available to withdraw</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(availableAmount)}</span>
-                                </div>
-                                
-                                <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
-                                        <div>
-                                            <p className="text-sm font-semibold text-slate-900 dark:text-white">Vesting Assets</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{activeContracts.length} Active Contracts</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(lockedAmount)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="glass rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm overflow-hidden mt-6">
-                        <div className="p-5 border-b border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 flex items-center space-x-3">
-                            <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
-                                <i className="fas fa-history"></i>
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Transfer History</h3>
-                        </div>
-                        {transactions.length === 0 ? (
-                            <div className="text-center py-12 text-slate-500 dark:text-slate-400 flex flex-col items-center">
-                                <i className="fas fa-inbox text-4xl mb-3 opacity-20"></i>
-                                <p>No recent transfers found.</p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/50 dark:border-slate-700/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4">Transaction Type</th>
-                                            <th className="px-6 py-4">Date & Time</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100/50 dark:divide-slate-800/50">
-                                        {transactions.map((tx) => (
-                                            <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-200 flex items-center space-x-3">
-                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${tx.type === 'Deposit' ? 'bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
-                                                        <i className={`fas ${tx.type === 'Deposit' ? 'fa-arrow-down' : 'fa-arrow-up'} text-xs`}></i>
-                                                    </div>
-                                                    <span>{tx.type}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
-                                                    {formatDate(tx.date)}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
-                                                        {tx.status}
-                                                    </span>
-                                                </td>
-                                                <td className={`px-6 py-4 text-right font-bold ${tx.type === 'Deposit' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
-                                                    {tx.type === 'Deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        }
-
+        // --- STREAMING_CHUNK: Designing Referrals View (Direct Partner Model) ---
         function ReferralView() {
             const [copied, setCopied] = useState(false);
             const referralLink = `https://zennithcapital.app/join?ref=${MOCK_USER.referralCode}`;
 
             const copyToClipboard = () => {
-                navigator.clipboard.writeText(referralLink).then(() => {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                }).catch(err => {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = referralLink;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(textArea);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                });
+                const textArea = document.createElement("textarea");
+                textArea.value = referralLink;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
             };
 
             return (
                 <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
-                    <div className="glass border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-8 md:p-12 text-center shadow-lg relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                    <div className="glass border border-emerald-500/10 dark:border-slate-800/50 rounded-2xl p-8 md:p-12 text-center shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
                         <div className="relative z-10">
-                            <div className="inline-flex p-5 bg-brand-50 dark:bg-brand-900/30 rounded-2xl mb-6 shadow-inner border border-brand-100 dark:border-brand-800">
-                                <i className="fas fa-handshake text-4xl text-brand-600 dark:text-brand-400 animate-float"></i>
+                            <div className="inline-flex p-5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl mb-6 shadow-inner border border-emerald-100/50 dark:border-emerald-900/30">
+                                <i className="fas fa-handshake text-4xl text-emerald-600 dark:text-emerald-400 animate-float"></i>
                             </div>
-                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Direct Partner Program: Earn 10%</h2>
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">Direct Partner Program: Earn 10%</h2>
                             <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-10 text-base md:text-lg">
-                                Invite eligible clients to Zennith Capital. As a Direct Partner, you will earn a 10% commission generated directly from the daily algorithmic profits of your referrals.
+                                Invite partners directly to Zennith Capital. As an accredited Direct Partner, you will continuously generate a high-performing 10% commission derived straight from your partners' realized profits.
                             </p>
 
-                            <div className="max-w-lg mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus-within:border-brand-500 dark:focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 rounded-xl p-1.5 flex items-center transition-all shadow-md">
+                            <div className="max-w-lg mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 rounded-xl p-1.5 flex items-center transition-all shadow-md">
                                 <div className="pl-4 text-slate-400">
                                     <i className="fas fa-link"></i>
                                 </div>
@@ -902,12 +795,12 @@
                                     type="text" 
                                     readOnly 
                                     value={referralLink}
-                                    className="bg-transparent border-none outline-none text-slate-700 dark:text-slate-300 w-full px-3 py-2 text-sm md:text-base font-medium"
+                                    className="bg-transparent border-none outline-none text-slate-700 dark:text-slate-300 w-full px-3 py-2 text-sm md:text-base font-semibold"
                                 />
                                 <button 
                                     onClick={copyToClipboard}
-                                    className={`flex items-center space-x-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-sm ${
-                                        copied ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 dark:hover:bg-slate-700'
+                                    className={`flex items-center space-x-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm ${
+                                        copied ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-slate-950 dark:bg-slate-800 text-white hover:bg-slate-800 dark:hover:bg-slate-700'
                                     }`}
                                 >
                                     <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`}></i>
@@ -918,44 +811,45 @@
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="glass border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="text-slate-500 dark:text-slate-400 text-sm font-semibold mb-2 flex items-center"><i className="fas fa-users mr-2 opacity-70"></i> Total Referrals</div>
-                            <div className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">4</div>
+                        <div className="glass border border-emerald-500/10 dark:border-slate-800/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="text-slate-500 dark:text-slate-400 text-xs font-bold mb-2 flex items-center uppercase tracking-wide"><i className="fas fa-users mr-2 text-emerald-500"></i> Total Referrals</div>
+                            <div className="text-4xl font-extrabold text-slate-950 dark:text-white tracking-tight">0</div>
                         </div>
-                        <div className="glass border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="text-slate-500 dark:text-slate-400 text-sm font-semibold mb-2 flex items-center"><i className="fas fa-user-check mr-2 opacity-70"></i> Active Accounts</div>
-                            <div className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">3</div>
+                        <div className="glass border border-emerald-500/10 dark:border-slate-800/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="text-slate-500 dark:text-slate-400 text-xs font-bold mb-2 flex items-center uppercase tracking-wide"><i className="fas fa-user-check mr-2 text-emerald-500"></i> Active Partners</div>
+                            <div className="text-4xl font-extrabold text-slate-950 dark:text-white tracking-tight">0</div>
                         </div>
-                        <div className="glass border border-brand-200 dark:border-brand-800 rounded-2xl p-6 shadow-md bg-brand-50/50 dark:bg-brand-900/10">
-                            <div className="text-brand-600 dark:text-brand-400 text-sm font-semibold mb-2 flex items-center"><i className="fas fa-gift mr-2 opacity-70"></i> Bonus Earned</div>
-                            <div className="text-4xl font-bold text-brand-600 dark:text-brand-400 tracking-tight">$142.50</div>
+                        <div className="glass border border-emerald-200 dark:border-emerald-800/50 rounded-2xl p-6 shadow-md bg-emerald-500/5">
+                            <div className="text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2 flex items-center uppercase tracking-wide"><i className="fas fa-gift mr-2"></i> Commissions Earned</div>
+                            <div className="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">₮0.00</div>
                         </div>
                     </div>
                 </div>
             );
         }
 
+        // --- STREAMING_CHUNK: Customizing Account Profile View ---
         function ProfileView() {
             return (
                 <div className="max-w-3xl mx-auto animate-fade-in-up">
-                    <div className="glass border border-slate-200/50 dark:border-slate-700/50 rounded-3xl overflow-hidden shadow-lg">
+                    <div className="glass border border-emerald-500/10 dark:border-slate-800/50 rounded-3xl overflow-hidden shadow-lg">
                         
-                        <div className="p-8 md:p-10 border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col md:flex-row items-center gap-8 bg-slate-50/80 dark:bg-slate-800/80 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/10 rounded-full blur-3xl"></div>
+                        <div className="p-8 md:p-10 border-b border-emerald-500/10 dark:border-slate-800/50 flex flex-col md:flex-row items-center gap-8 bg-slate-50/80 dark:bg-slate-800/30 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl"></div>
                             
                             <div className="relative">
-                                <div className="w-24 h-24 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-2xl flex items-center justify-center text-3xl font-bold text-slate-600 dark:text-slate-300 shadow-lg border border-white/50 dark:border-white/10 transform rotate-3 hover:rotate-0 transition-transform">
+                                <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center text-3xl font-extrabold text-emerald-800 dark:text-emerald-400 shadow-lg border border-white/50 dark:border-white/10 transform rotate-3 hover:rotate-0 transition-transform">
                                     {MOCK_USER.name.split(' ').map(n => n[0]).join('')}
                                 </div>
-                                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-lg border-2 border-white dark:border-slate-800 shadow-sm">
+                                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-lg border-2 border-white dark:border-slate-950 shadow-sm">
                                     <i className="fas fa-shield-check text-xs"></i>
                                 </div>
                             </div>
                             
                             <div className="text-center md:text-left relative z-10">
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{MOCK_USER.name}</h2>
+                                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-1">{MOCK_USER.name}</h2>
                                 <p className="text-slate-500 dark:text-slate-400 mb-4">{MOCK_USER.email}</p>
-                                <div className="inline-flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 shadow-sm">
+                                <div className="inline-flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
                                     <i className="fas fa-check-circle"></i>
                                     <span>KYC {MOCK_USER.kycStatus}</span>
                                 </div>
@@ -964,51 +858,51 @@
 
                         <div className="p-8 md:p-10 space-y-8">
                             <div>
-                                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">Account Information</h3>
+                                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">Account Details</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Full Legal Name</label>
-                                        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium">
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Legal Identity Name</label>
+                                        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 font-semibold">
                                             {MOCK_USER.name}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Email Address</label>
-                                        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium">
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Primary Email</label>
+                                        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 font-semibold">
                                             {MOCK_USER.email}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Account Tier</label>
-                                        <div className="px-4 py-3 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20 border border-brand-100 dark:border-brand-800/50 rounded-xl text-brand-700 dark:text-brand-300 font-bold flex items-center">
-                                            <i className="fas fa-star mr-2 text-brand-500"></i>
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Investment Profile Tier</label>
+                                        <div className="px-4 py-3 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 rounded-xl text-emerald-800 dark:text-emerald-400 font-bold flex items-center">
+                                            <i className="fas fa-medal mr-2 text-emerald-500 animate-float"></i>
                                             {MOCK_USER.accountType}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Client Since</label>
-                                        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium">
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Account Initiated</label>
+                                        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 font-semibold">
                                             {formatDate(MOCK_USER.joinDate).split(',')[0]}
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <hr className="border-slate-200 dark:border-slate-700/50" />
+                            <hr className="border-slate-200 dark:border-slate-800/50" />
                             
                             <div>
-                                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Security Settings</h3>
-                                <button className="group flex items-center justify-between w-full p-4 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-md transition-all">
+                                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Security Preferences</h3>
+                                <button className="group flex items-center justify-between w-full p-4 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-emerald-500/50 hover:shadow-md transition-all">
                                     <div className="flex items-center space-x-4">
-                                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center group-hover:bg-brand-50 dark:group-hover:bg-brand-900/30 transition-colors">
-                                            <i className="fas fa-lock text-slate-500 dark:text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 text-lg"></i>
+                                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/30 transition-colors">
+                                            <i className="fas fa-lock text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 text-lg"></i>
                                         </div>
                                         <div className="text-left">
-                                            <div className="font-bold text-slate-900 dark:text-white text-base">Update Password</div>
-                                            <div className="text-sm text-slate-500 dark:text-slate-400">Modify your secure login credentials</div>
+                                            <div className="font-bold text-slate-950 dark:text-white text-base">Two-Factor Authentication</div>
+                                            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Keep account interactions secure</div>
                                         </div>
                                     </div>
-                                    <i className="fas fa-chevron-right text-slate-400 group-hover:text-brand-500 group-hover:translate-x-1 transition-all"></i>
+                                    <i className="fas fa-chevron-right text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all"></i>
                                 </button>
                             </div>
                         </div>
@@ -1017,17 +911,18 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Crafting Telegram Integrated Support View ---
         function SupportView() {
             return (
                 <div className="max-w-3xl mx-auto animate-fade-in-up">
-                    <div className="glass border border-slate-200/50 dark:border-slate-700/50 rounded-3xl overflow-hidden shadow-lg p-8 md:p-12 text-center relative">
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/10 rounded-full blur-3xl"></div>
-                        <div className="inline-flex p-5 bg-brand-50 dark:bg-brand-900/30 rounded-2xl mb-6 shadow-inner border border-brand-100 dark:border-brand-800">
-                            <i className="fab fa-telegram-plane text-5xl text-brand-500 animate-float"></i>
+                    <div className="glass border border-emerald-500/10 dark:border-slate-800/50 rounded-3xl overflow-hidden shadow-lg p-8 md:p-12 text-center relative">
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl"></div>
+                        <div className="inline-flex p-5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl mb-6 shadow-inner border border-emerald-100/50 dark:border-emerald-900/30">
+                            <i className="fab fa-telegram-plane text-5xl text-emerald-500 animate-float"></i>
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Need Assistance?</h2>
-                        <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-10 text-lg">
-                            Our dedicated support team is available 24/7 via Telegram to help you with deposits, withdrawals, and account management.
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">Need Assistance?</h2>
+                        <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-10 text-md">
+                            Our team of financial operations specialists is available around-the-clock on Telegram to assist with manual validations, customized liquidity tiers, or compliance queries.
                         </p>
                         <a 
                             href="https://t.me/elmetadora" 
@@ -1043,6 +938,7 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Structuring Secure Deposit Modal Window ---
         function DepositModal({ isOpen, onClose }) {
             const [copied, setCopied] = useState(false);
             const depositAddress = "0xabb2237b3fff75eb90f515e5b8487077105546c9";
@@ -1050,56 +946,51 @@
             if (!isOpen) return null;
 
             const copyToClipboard = () => {
-                navigator.clipboard.writeText(depositAddress).then(() => {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                }).catch(err => {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = depositAddress;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(textArea);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                });
+                const textArea = document.createElement("textarea");
+                textArea.value = depositAddress;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
             };
 
             return (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in-up" style={{ animationDuration: '0.2s' }}>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden transform scale-100 transition-transform">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in-up" style={{ animationDuration: '0.2s' }}>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden transform scale-100 transition-transform">
                         <div className="p-6 md:p-8">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center">
-                                    <i className="fas fa-arrow-down-circle text-brand-500 mr-3"></i> Deposit Funds
+                                <h3 className="text-2xl font-bold text-slate-950 dark:text-white tracking-tight flex items-center">
+                                    <i className="fas fa-arrow-down-circle text-emerald-500 mr-3"></i> Fund Account
                                 </h3>
-                                <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700">
+                                <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center">
                                     <i className="fas fa-times"></i>
                                 </button>
                             </div>
 
                             <div className="space-y-6">
-                                <div className="text-center p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                <div className="text-center p-6 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-emerald-500/5">
                                     <div className="bg-white p-3 rounded-xl inline-block shadow-sm mb-4">
                                         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${depositAddress}`} alt="QR Code" className="w-32 h-32" />
                                     </div>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 font-medium">Send USDT to this address:</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-bold uppercase tracking-wider">Target Wallet Address (USDT - EVM)</p>
                                     
-                                    <div className="flex items-center bg-slate-200 dark:bg-slate-900 rounded-lg p-1 border border-slate-300 dark:border-slate-700 overflow-hidden">
+                                    <div className="flex items-center bg-slate-200 dark:bg-slate-950 rounded-lg p-1 border border-slate-300 dark:border-slate-800 overflow-hidden">
                                         <code className="text-xs text-slate-800 dark:text-slate-300 px-3 py-2 truncate flex-1 font-mono">{depositAddress}</code>
                                         <button 
                                             onClick={copyToClipboard}
-                                            className={`px-4 py-2 rounded-md text-xs font-bold transition-colors ${copied ? 'bg-emerald-500 text-white' : 'bg-brand-500 text-white hover:bg-brand-600'}`}
+                                            className={`px-4 py-2 rounded-md text-xs font-bold transition-colors ${copied ? 'bg-emerald-500 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                                         >
                                             {copied ? 'Copied!' : 'Copy'}
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 flex items-start space-x-3">
+                                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start space-x-3">
                                     <i className="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
-                                    <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed font-medium">
-                                        After transferring funds, please contact our support team on Telegram with your transaction details to expedite crediting to your account.
+                                    <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed font-semibold">
+                                        Transfer funds directly over supported networks. Once completed, share your receipt or hash with support to credit balance immediately.
                                     </p>
                                 </div>
 
@@ -1107,10 +998,10 @@
                                     href="https://t.me/elmetadora" 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="w-full py-4 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center hover:-translate-y-0.5 space-x-2"
+                                    className="w-full py-4 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center space-x-2"
                                 >
                                     <i className="fab fa-telegram-plane text-xl"></i>
-                                    <span>Notify Support via Telegram</span>
+                                    <span>Validate Transaction via Telegram</span>
                                 </a>
                             </div>
                         </div>
@@ -1119,42 +1010,43 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Structuring Secure Withdrawal Modal Window ---
         function WithdrawModal({ isOpen, onClose, availableAmount, lockedAmount }) {
             if (!isOpen) return null;
 
             return (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in-up" style={{ animationDuration: '0.2s' }}>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden transform scale-100 transition-transform">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in-up" style={{ animationDuration: '0.2s' }}>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden transform scale-100 transition-transform">
                         <div className="p-6 md:p-8">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center">
-                                    <i className="fas fa-arrow-up-circle text-slate-700 dark:text-slate-300 mr-3"></i> Withdraw Funds
+                                <h3 className="text-2xl font-bold text-slate-950 dark:text-white tracking-tight flex items-center">
+                                    <i className="fas fa-arrow-up-circle text-slate-700 dark:text-slate-300 mr-3"></i> Request Withdrawal
                                 </h3>
-                                <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700">
+                                <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center">
                                     <i className="fas fa-times"></i>
                                 </button>
                             </div>
 
                             <div className="space-y-6">
-                                <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-5 mb-2">
+                                <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-xl p-5 mb-2 animate-pulse-slow">
                                     <div className="flex justify-between items-center mb-3">
-                                        <span className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">Available Liquid</span>
-                                        <span className="text-xl font-bold text-brand-600 dark:text-brand-400">{formatCurrency(availableAmount)}</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">Available Profit Liquidity</span>
+                                        <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(availableAmount)}</span>
                                     </div>
-                                    <div className="h-px w-full bg-slate-200 dark:bg-slate-700 mb-3"></div>
+                                    <div className="h-px w-full bg-slate-200 dark:bg-slate-800 mb-3"></div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xs text-slate-400 font-medium"><i className="fas fa-lock mr-1"></i> Locked Principal:</span>
-                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-300">{formatCurrency(lockedAmount)}</span>
+                                        <span className="text-xs text-slate-400 font-bold uppercase"><i className="fas fa-lock mr-1 text-amber-500"></i> Locked Principal:</span>
+                                        <span className="text-sm font-extrabold text-slate-500 dark:text-slate-300">{formatCurrency(lockedAmount)}</span>
                                     </div>
                                 </div>
 
                                 <div className="text-center py-4">
-                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-500 mb-4">
-                                        <i className="fas fa-headset text-2xl"></i>
+                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 mb-4 animate-float">
+                                        <i className="fas fa-shield-alt text-2xl"></i>
                                     </div>
-                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Manual Withdrawal</h4>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 px-4">
-                                        To ensure the highest security of client funds, all withdrawal requests are processed manually by our financial department.
+                                    <h4 className="text-lg font-bold text-slate-950 dark:text-white mb-2">Secure Institutional Processing</h4>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 px-4 leading-relaxed font-semibold">
+                                        For enhanced asset isolation, all withdrawal requests are processed systematically through our secure manual dispatch desk.
                                     </p>
                                 </div>
 
@@ -1162,10 +1054,10 @@
                                     href="https://t.me/elmetadora" 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="w-full py-4 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center hover:-translate-y-0.5 space-x-2"
+                                    className="w-full py-4 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center space-x-2"
                                 >
                                     <i className="fab fa-telegram-plane text-xl"></i>
-                                    <span>Request via Telegram (@elmetadora)</span>
+                                    <span>Initiate Transfer Request (@elmetadora)</span>
                                 </a>
                             </div>
                         </div>
@@ -1174,6 +1066,7 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Starting the React Application... ---
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
